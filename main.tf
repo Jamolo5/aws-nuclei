@@ -13,6 +13,20 @@ provider "aws" {
   region  = "us-west-2"
 }
 
+resource "aws_s3_bucket" "b" {
+  bucket = "lambda-bucket"
+
+  tags = {
+    Name        = "Lambda Bucket"
+    Environment = "Dev"
+  }
+}
+
+resource "aws_s3_bucket_acl" "example" {
+  bucket = aws_s3_bucket.b.id
+  acl    = "private"
+}
+
 resource "aws_iam_role" "iam_for_lambda" {
   name = "iam_for_lambda"
 
