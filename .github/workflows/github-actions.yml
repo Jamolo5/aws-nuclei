@@ -22,7 +22,7 @@ jobs:
     - run: mkdir -p ./artifacts
     - uses: montudor/action-zip@v0.1.0
       with:
-        args: zip -r ./artifacts/lambda_function_payload.zip lambda
+        args: zip -r ./artifacts/lambda_function_payload.zip -d lambda
     - uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
