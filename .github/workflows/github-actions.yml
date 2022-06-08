@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Zip Lambda & Upload to S3
 
 # Controls when the workflow will run
 on:
@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Upload to S3
+    name: Zip Lambda & Upload to S3
     steps:
     - run: mkdir -p ./artifacts
     - uses: montudor/action-zip@v0.1.0
