@@ -20,8 +20,8 @@ jobs:
     environment: dev
     name: Zip Lambda & Upload to S3
     steps:
-    - run: mkdir -p ./artifacts
     - uses: actions/checkout@master
+    - run: mkdir -p ./artifacts
     - run: ls -la
     - uses: montudor/action-zip@v1
       with:
