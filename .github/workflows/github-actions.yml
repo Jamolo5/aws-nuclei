@@ -21,9 +21,13 @@ jobs:
     name: Zip Lambda & Upload to S3
     steps:
     - run: mkdir -p ./artifacts
+    - run: ls -la
     - uses: montudor/action-zip@v1
       with:
-        args: zip -r ./artifacts/lambda_function_payload.zip ./src/lambda/hello.py ./src/lambda
+        args: zip -r ./artifacts/lambda_function_payload.zip ./lambda/hello.py
+    - uses: montudor/action-zip@v1
+      with:
+        args: zip ./artifacts/lambda_function_payload.zip . -i ./lambda/hello.py
     - uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
