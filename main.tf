@@ -1,4 +1,13 @@
 terraform {
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = "james-personal-account"
+
+    workspaces {
+      prefix = "aws-nuclei"
+    }
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
