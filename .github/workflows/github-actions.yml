@@ -15,10 +15,9 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
+  zip_and_upload_lambda:
     runs-on: ubuntu-latest
     environment: dev
-    name: Zip & Upload Lambda
     steps:
     - uses: actions/checkout@master
       name: Get the repo files
@@ -37,6 +36,7 @@ jobs:
         path: ./artifacts/lambda_function_payload.zip
 
   terraform_plan:
+    needs: zip_and_upload_lambda
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v3
