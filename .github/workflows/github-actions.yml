@@ -30,7 +30,7 @@ jobs:
       with:
         args: zip -r ./artifacts/lambda_function_payload.zip lambda
 
-    - uses: actions/upload-artifacts@v2
+    - uses: actions/upload-artifact@v3
       name: Upload zip of lambda
       with:
         name: lambda-payload
@@ -39,7 +39,7 @@ jobs:
   terraform_plan:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifacts@v2
+    - uses: actions/download-artifact@v3
       with:
         name: lambda-payload
         path: artifacts
