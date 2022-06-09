@@ -4,7 +4,7 @@ terraform {
     organization = "james-personal-account"
 
     workspaces {
-      prefix = "aws-nuclei"
+      name = "aws-nuclei"
     }
   }
 
