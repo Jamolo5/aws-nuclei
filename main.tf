@@ -48,7 +48,7 @@ resource "aws_lambda_function" "test_lambda" {
   filename      = "artifacts/lambda_function_payload.zip"
   function_name = "hello_world"
   role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "hello.lambda_handler"
+  handler       = "lambda_function.lambda_handler"
 
   source_code_hash = filebase64sha256("artifacts/lambda_function_payload.zip")
 

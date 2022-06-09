@@ -18,10 +18,12 @@ jobs:
     - name: Create artifacts folder
       run: mkdir -p ./artifacts
 
-    - name: Zip the contents of the lambda folder
+    - name: Install zip
       uses: montudor/action-zip@v1
-      with:
-        args: zip -r ./artifacts/lambda_function_payload.zip lambda
+
+    - name: Zip lambda files
+      run: zip -r ../artifacts/lambda_function_payload.zip .
+      working-directory: ./lambda
 
     - name: Upload zip of lambda
       uses: actions/upload-artifact@v3
