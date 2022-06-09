@@ -21,7 +21,7 @@ jobs:
     - name: Install zip
       uses: montudor/action-zip@v1
 
-    -name: Zip lambda files
+    - name: Zip lambda files
       run: zip -r ../artifacts/lambda_function_payload.zip .
       working-directory: ./lambda
 
