@@ -34,6 +34,9 @@ jobs:
     needs: zip_and_upload_lambda
     runs-on: ubuntu-latest
     steps:
+    - name: Get the repo files
+      uses: actions/checkout@master
+
     - name: Download the payload that was previous built/zipped/uploaded
       uses: actions/download-artifact@v3
       with:
