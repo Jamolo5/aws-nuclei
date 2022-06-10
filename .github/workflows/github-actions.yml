@@ -23,20 +23,20 @@ jobs:
     - run: poetry install
       working-directory: ./crawler/
 
-    build_crawler:
-      needs: test_crawler
-      runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v2
+  build_crawler:
+    needs: test_crawler
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
 
-      - uses: ./crawler/
-        name: build the crawler lambda artifact
+    - uses: ./crawler/
+      name: build the crawler lambda artifact
 
-      - uses: actions/upload-artifact@v2
-        name: Upload zip of crawler lambda
-        with:
-          name: crawler_lambda
-          path: dist.zip
+    - uses: actions/upload-artifact@v2
+      name: Upload zip of crawler lambda
+      with:
+        name: crawler_lambda
+        path: dist.zip
 
   zip_and_upload_test_lambda:
     runs-on: ubuntu-latest
