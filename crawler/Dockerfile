@@ -47,11 +47,13 @@ RUN ls -la
 
 RUN chmod 754 crawler/lambda_function.py
 
-RUN peotry run pip install --upgrade -t package dist/*.whl
+# The following two commands are taken from https://chariotsolutions.com/blog/post/building-lambdas-with-poetry/
+
+RUN poetry run pip install --upgrade -t package dist/*.whl
 
 RUN ls -la
 
-RUN cd package; zip -r /dist/dist.zip -D package -x '*.pyc'
+RUN zip -r /dist/dist.zip -D package -x '*.pyc'
 
 RUN ls -la
 
