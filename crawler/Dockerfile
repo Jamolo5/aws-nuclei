@@ -45,8 +45,16 @@ RUN poetry install --no-interaction --no-dev
 
 RUN ls -la
 
-RUN chmod 754 lambda_function.py
+RUN chmod 754 crawler/lambda_function.py
 
-RUN zip -r /dist/dist.zip .
+RUN peotry run pip install --upgrade -t package dist/*.whl
+
+RUN ls -la
+
+RUN cd package; zip -r /dist/dist.zip -D package -x '*.pyc'
+
+RUN ls -la
+
+# RUN zip -r /dist/dist.zip .
 
 ENTRYPOINT ["cp", "/dist/dist.zip", "/github/workspace/dist.zip"]
