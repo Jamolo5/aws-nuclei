@@ -72,6 +72,7 @@ jobs:
     - name: Download all artifacts to the artifacts folder
       uses: actions/download-artifact@v3
       with:
+        name: hello_world_lambda
         path: artifacts
     
     # Terraform commands mostly taken from https://learn.hashicorp.com/tutorials/terraform/github-actions

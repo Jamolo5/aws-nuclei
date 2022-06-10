@@ -43,6 +43,8 @@ COPY  "." ./
 # See this issue for more context: https://github.com/python-poetry/poetry/issues/1899
 RUN poetry install --no-interaction --no-dev
 
+RUN ls -la
+
 RUN chmod 754 lambda_function.py
 
 RUN zip -r /dist/dist.zip .
