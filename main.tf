@@ -62,11 +62,37 @@ resource "aws_lambda_function" "test_lambda" {
 
   runtime = "python3.9"
 
-  environment {
-    variables = {
-      foo = "bar"
-    }
-  }
+  # environment {
+  #   variables = {
+  #     foo = "bar"
+  #   }
+  # }
+
+}
+
+resource "aws_lambda_function_url" "test_live" {
+  # URL for the above Lambda
+  function_name      = aws_lambda_function.test_lambda.function_name
+  authorization_type = "AWS_IAM"
+}
+
+resource "aws_lambda_function" "crawler" {
+  # If the file is not in the current working directory you will need to include a 
+  # path.module in the filename.
+  filename      = "artifacts/crawler_lambda.zip"
+  function_name = "crawler"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "lambda_function.lambda_handler"
+
+  source_code_hash = filebase64sha256("artifacts/crawler_lambda.zip")
+
+  runtime = "python3.9"
+
+  # environment {
+  #   variables = {
+  #     foo = "bar"
+  #   }
+  # }
 
 }
 
