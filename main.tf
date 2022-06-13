@@ -44,8 +44,41 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role" "crawler_role" {
+  name = "crawler_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Sid    = ""
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "crawler_policy_attach1" {
+  role       = aws_iam_role.crawler_assume_policy.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "crawler_policy_attach2" {
+  role       = aws_iam_role.crawler_role.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
 resource "aws_cloudwatch_log_group" "test_lambda" {
   name = "/aws/lambda/${aws_lambda_function.test_lambda.function_name}"
+
+  retention_in_days = 3
+}
+
+resource "aws_cloudwatch_log_group" "crawler" {
+  name = "/aws/lambda/${aws_lambda_function.crawler.function_name}"
 
   retention_in_days = 3
 }
