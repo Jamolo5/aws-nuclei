@@ -47,6 +47,8 @@ RUN ls -la
 
 RUN chmod 754 crawler/lambda_function.py
 
+RUN find . -name /* -print
+
 # The following two commands are taken from https://chariotsolutions.com/blog/post/building-lambdas-with-poetry/
 
 RUN poetry run pip install --upgrade -t package crawler/dist/*.whl
