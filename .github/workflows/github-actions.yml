@@ -36,7 +36,7 @@ jobs:
       name: Upload zip of crawler lambda
       with:
         name: crawler_lambda
-        path: dist.zip
+        path: crawler_lambda.zip
 
   zip_and_upload_test_lambda:
     runs-on: ubuntu-latest
