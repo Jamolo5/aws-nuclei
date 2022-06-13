@@ -69,10 +69,16 @@ jobs:
     - name: Get the repo files
       uses: actions/checkout@master
 
-    - name: Download all artifacts to the artifacts folder
+    - name: Download hello world lambda to the artifacts folder
       uses: actions/download-artifact@v3
       with:
         name: hello_world_lambda
+        path: artifacts
+
+    - name: Download crawler lambda to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: crawler_lambda
         path: artifacts
     
     # Terraform commands mostly taken from https://learn.hashicorp.com/tutorials/terraform/github-actions
