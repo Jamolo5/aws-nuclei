@@ -43,20 +43,14 @@ COPY  "." ./
 # See this issue for more context: https://github.com/python-poetry/poetry/issues/1899
 RUN poetry install --no-interaction --no-dev
 
-RUN poetry build
-
 RUN chmod 754 crawler/lambda_function.py
 
-# The following two commands are taken from https://chariotsolutions.com/blog/post/building-lambdas-with-poetry/
+# The following commands are taken from https://chariotsolutions.com/blog/post/building-lambdas-with-poetry/
+
+RUN poetry build
 
 RUN poetry run pip install --upgrade -t package dist/*.whl
 
-RUN ls -la
-
-RUN zip -r /dist/dist.zip -D package -x '*.pyc'
-
-RUN ls -la
-
-# RUN zip -r /dist/dist.zip .
+RUN zip -r -j -D /dist/dist.zip package/crawler -x '*.pyc'
 
 ENTRYPOINT ["cp", "/dist/dist.zip", "/github/workspace/dist.zip"]
