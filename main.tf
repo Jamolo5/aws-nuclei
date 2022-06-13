@@ -62,7 +62,7 @@ resource "aws_iam_role" "crawler_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "crawler_policy_attach1" {
-  role       = aws_iam_role.crawler_assume_policy.name
+  role       = aws_iam_role.crawler_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
