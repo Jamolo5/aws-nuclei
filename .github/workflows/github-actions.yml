@@ -8,7 +8,37 @@ on:
   pull_request:
 
 jobs:
-  zip_and_upload_lambda:
+  test_crawler:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - run: pip install poetry
+    - run: poetry install
+      working-directory: ./crawler/
+
+  build_crawler:
+    needs: test_crawler
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: ./crawler/
+      name: build the crawler lambda artifact
+
+    - uses: actions/upload-artifact@v2
+      name: Upload zip of crawler lambda
+      with:
+        name: crawler_lambda
+        path: crawler_lambda.zip
+
+  zip_and_upload_test_lambda:
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -22,31 +52,36 @@ jobs:
       uses: montudor/action-zip@v1
 
     - name: Zip lambda files
-      run: zip -r ../artifacts/lambda_function_payload.zip .
+      run: zip -r ../artifacts/hello_world_lambda.zip .
       working-directory: ./lambda
 
     - name: Upload zip of lambda
       uses: actions/upload-artifact@v3
       with:
-        name: lambda-payload
-        path: ./artifacts/lambda_function_payload.zip
+        name: hello_world_lambda
+        path: ./artifacts/hello_world_lambda.zip
 
-  terraform_plan:
-    needs: zip_and_upload_lambda
+  terraform_plan_or_apply:
+    needs: [zip_and_upload_test_lambda, build_crawler]
     runs-on: ubuntu-latest
     environment: dev
     steps:
     - name: Get the repo files
       uses: actions/checkout@master
 
-    - name: Download the payload that was previous built/zipped/uploaded
+    - name: Download hello world lambda to the artifacts folder
       uses: actions/download-artifact@v3
       with:
-        name: lambda-payload
+        name: hello_world_lambda
+        path: artifacts
+
+    - name: Download crawler lambda to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: crawler_lambda
         path: artifacts
     
     # Terraform commands mostly taken from https://learn.hashicorp.com/tutorials/terraform/github-actions
-    # More rework will be needed here if I want a nice plan on PR, apply on merge process
 
     - name: Set up the terraform CLI
       uses: hashicorp/setup-terraform@v1
