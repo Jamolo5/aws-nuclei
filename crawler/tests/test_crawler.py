@@ -7,5 +7,5 @@ def test_version():
 
 def test_handler():
     result = lambda_handler('','')
-    print(result)
-    assert result == 200
+    assert type(result["body"][0]) is str
+    assert result["statusCode"] == 200

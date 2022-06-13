@@ -43,19 +43,18 @@ COPY  "." ./
 # See this issue for more context: https://github.com/python-poetry/poetry/issues/1899
 RUN poetry install --no-interaction --no-dev
 
-RUN ls -la
+RUN poetry build
 
 RUN chmod 754 crawler/lambda_function.py
 
 RUN ls crawler
-
 # The following two commands are taken from https://chariotsolutions.com/blog/post/building-lambdas-with-poetry/
 
-# RUN poetry run pip install --upgrade -t package crawler/dist/*.whl
+RUN poetry run pip install --upgrade -t package crawler/dist/*.whl
 
 RUN ls -la
 
-# RUN zip -r /dist/dist.zip -D package -x '*.pyc'
+RUN zip -r /dist/dist.zip -D package -x '*.pyc'
 
 RUN ls -la
 
