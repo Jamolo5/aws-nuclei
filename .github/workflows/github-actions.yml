@@ -62,7 +62,7 @@ jobs:
         path: ./artifacts/hello_world_lambda.zip
 
   terraform_plan_or_apply:
-    needs: zip_and_upload_test_lambda
+    needs: [zip_and_upload_test_lambda, build_crawler]
     runs-on: ubuntu-latest
     environment: dev
     steps:
