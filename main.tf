@@ -22,6 +22,25 @@ provider "aws" {
   region = "us-west-2"
 }
 
+resource "aws_iam_policy" "sqs_publish_policy" {
+  name        = "sqs_publish_policy"
+  path        = "/"
+  description = "Grants permission to publish to the crawled-urls SQS queue"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:Describe*",
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_sqs_queue.crawled-urls.arn}"
+      },
+    ]
+  })
+}
+
 resource "aws_iam_role" "lambda_exec" {
   name = "serverless_lambda"
 
@@ -61,14 +80,46 @@ resource "aws_iam_role" "crawler_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "crawler_policy_attach1" {
+resource "aws_iam_role_policy_attachment" "crawler_policy_attach_lambda_basic" {
   role       = aws_iam_role.crawler_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "crawler_policy_attach2" {
+resource "aws_iam_role_policy_attachment" "crawler_policy_attach_readonly" {
   role       = aws_iam_role.crawler_role.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "crawler_policy_attach_sqs_publish" {
+  role       = aws_iam_role.crawler_role.name
+  policy_arn = aws_iam_policy.sqs_publish_policy.arn
+}
+
+resource "aws_iam_role" "scanner_role" {
+  name = "scanner_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Sid    = ""
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "scanner_policy_attach_lambda_basic" {
+  role       = aws_iam_role.scanner_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "scanner_policy_attach_sqs_execution" {
+  role       = aws_iam_role.scanner_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
 
 resource "aws_cloudwatch_log_group" "test_lambda" {
@@ -84,8 +135,6 @@ resource "aws_cloudwatch_log_group" "crawler" {
 }
 
 resource "aws_lambda_function" "test_lambda" {
-  # If the file is not in the current working directory you will need to include a 
-  # path.module in the filename.
   filename      = "artifacts/hello_world_lambda.zip"
   function_name = "hello_world"
   role          = aws_iam_role.lambda_exec.arn
@@ -94,13 +143,6 @@ resource "aws_lambda_function" "test_lambda" {
   source_code_hash = filebase64sha256("artifacts/hello_world_lambda.zip")
 
   runtime = "python3.9"
-
-  # environment {
-  #   variables = {
-  #     foo = "bar"
-  #   }
-  # }
-
 }
 
 resource "aws_lambda_function_url" "test_live" {
@@ -110,12 +152,10 @@ resource "aws_lambda_function_url" "test_live" {
 }
 
 resource "aws_lambda_function" "crawler" {
-  # If the file is not in the current working directory you will need to include a 
-  # path.module in the filename.
   filename      = "artifacts/crawler_lambda.zip"
   function_name = "crawler"
   role          = aws_iam_role.crawler_role.arn
-  handler       = "crawler.lambda_function.lambda_handler"
+  handler       = "package.crawler.lambda_function.lambda_handler"
   timeout       = 10
   layers        = [aws_lambda_layer_version.boto3-layer.arn]
 
@@ -123,12 +163,11 @@ resource "aws_lambda_function" "crawler" {
 
   runtime = "python3.9"
 
-  # environment {
-  #   variables = {
-  #     foo = "bar"
-  #   }
-  # }
-
+  environment {
+    variables = {
+      sqsArn = aws_sqs_queue.crawled-urls.arn
+    }
+  }
 }
 
 resource "aws_lambda_layer_version" "boto3-layer" {
@@ -196,4 +235,21 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
+}
+
+resource "aws_sqs_queue" "crawled-urls" {
+  name = "crawled-urls"
+  # delay_seconds             = 90
+  max_message_size           = 2048
+  message_retention_seconds  = 7200
+  receive_wait_time_seconds  = 20
+  visibility_timeout_seconds = 30
+  # redrive_policy = jsonencode({
+  #   deadLetterTargetArn = aws_sqs_queue.terraform_queue_deadletter.arn
+  #   maxReceiveCount     = 4
+  # })
+  # redrive_allow_policy = jsonencode({
+  #   redrivePermission = "byQueue",
+  #   sourceQueueArns   = [aws_sqs_queue.terraform_queue_deadletter.arn]
+  # })
 }
