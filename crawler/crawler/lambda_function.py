@@ -1,5 +1,4 @@
 import boto3
-import botocore.exceptions
 
 def lambda_handler(event, context):
     result = []

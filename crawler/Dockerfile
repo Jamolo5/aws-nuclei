@@ -51,6 +51,6 @@ RUN poetry build
 
 RUN poetry run pip install --upgrade -t package dist/*.whl
 
-RUN zip -r -j -D /dist/crawler_lambda.zip package/crawler -x '*.pyc'
+RUN zip -r -D /dist/crawler_lambda.zip package -x '*.pyc'
 
 ENTRYPOINT ["cp", "/dist/crawler_lambda.zip", "/github/workspace/crawler_lambda.zip"]
