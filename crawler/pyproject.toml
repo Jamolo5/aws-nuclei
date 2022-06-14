@@ -6,10 +6,10 @@ authors = ["James Hercock <jamolo.hercock@hotmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+boto3 = "^1.24.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
-boto3 = "^1.24.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
