@@ -117,7 +117,7 @@ resource "aws_lambda_function" "crawler" {
   role          = aws_iam_role.crawler_role.arn
   handler       = "crawler.lambda_function.lambda_handler"
   timeout       = 10
-  layers        = [ aws_lambda_layer_version.boto3-layer.arn ]
+  layers        = [aws_lambda_layer_version.boto3-layer.arn]
 
   source_code_hash = filebase64sha256("artifacts/crawler_lambda.zip")
 
