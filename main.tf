@@ -165,7 +165,7 @@ resource "aws_lambda_function" "crawler" {
 
   environment {
     variables = {
-      sqsArn = aws_sqs_queue.crawled-urls.arn
+      sqsUrl = aws_sqs_queue.crawled-urls.url
     }
   }
 }
