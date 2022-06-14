@@ -48,5 +48,3 @@ def crawl_lambda():
         except client.exceptions.ResourceNotFoundException:
             print('No URL config found for alias: ',aliasName)
     return (urls)
-
-lambda_handler('','')

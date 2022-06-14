@@ -8,6 +8,30 @@ on:
   pull_request:
 
 jobs:
+  build_boto3_layer:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - run: mkdir -p ./tmp/boto3-layer/python
+    - run: pip3 install boto3 -t ./tmp/boto3-layer/python
+    - name: Install zip
+      uses: montudor/action-zip@v1
+
+    - name: Zip layer files
+      run: zip -r ../../boto3-layer.zip .
+      working-directory: ./tmp/boto3-layer
+
+    - name: Upload zip of layer
+      uses: actions/upload-artifact@v2
+      with:
+        name: boto3-layer
+        path: ./boto3-layer.zip
+
   test_crawler:
     runs-on: ubuntu-latest
     environment: dev
@@ -62,7 +86,7 @@ jobs:
         path: ./artifacts/hello_world_lambda.zip
 
   terraform_plan_or_apply:
-    needs: [zip_and_upload_test_lambda, build_crawler]
+    needs: [zip_and_upload_test_lambda, build_crawler, build_boto3_layer]
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -79,6 +103,12 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: crawler_lambda
+        path: artifacts
+
+    - name: Download boto3 layer to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: boto3-layer
         path: artifacts
     
     # Terraform commands mostly taken from https://learn.hashicorp.com/tutorials/terraform/github-actions
