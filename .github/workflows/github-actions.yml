@@ -17,8 +17,8 @@ jobs:
       with:
         python-version: 3.9
 
-    - run: mkdir tmp/boto3-layer/python
-    - run: pip3 install boto3 -t tmp/boto3-layer/python
+    - run: mkdir -p ./tmp/boto3-layer/python
+    - run: pip3 install boto3 -t ./tmp/boto3-layer/python
     - name: Install zip
       uses: montudor/action-zip@v1
 
@@ -86,7 +86,7 @@ jobs:
         path: ./artifacts/hello_world_lambda.zip
 
   terraform_plan_or_apply:
-    needs: [zip_and_upload_test_lambda, build_crawler]
+    needs: [zip_and_upload_test_lambda, build_crawler, build_boto3_layer]
     runs-on: ubuntu-latest
     environment: dev
     steps:
