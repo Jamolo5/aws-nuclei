@@ -117,6 +117,7 @@ resource "aws_lambda_function" "crawler" {
   role          = aws_iam_role.crawler_role.arn
   handler       = "crawler.lambda_function.lambda_handler"
   timeout       = 10
+  layers        = [ aws_lambda_layer_version.boto3-layer.arn ]
 
   source_code_hash = filebase64sha256("artifacts/crawler_lambda.zip")
 
@@ -128,6 +129,13 @@ resource "aws_lambda_function" "crawler" {
   #   }
   # }
 
+}
+
+resource "aws_lambda_layer_version" "boto3-layer" {
+  filename   = "artifacts/boto3-layer.zip"
+  layer_name = "boto3-layer"
+
+  compatible_runtimes = ["python3.9"]
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
