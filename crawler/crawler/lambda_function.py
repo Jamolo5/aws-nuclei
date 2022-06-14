@@ -1,8 +1,23 @@
+import json
 import boto3
+import os
+import json
+
+sqsUrl = os.environ.get('sqsUrl')
+sqsClient = boto3.client('sqs')
 
 def lambda_handler(event, context):
     result = []
     result.extend(crawl_lambda())
+
+    for url in result:
+        sqsClient.send_message(
+            QueueUrl=sqsUrl,
+            MessageBody=json.dumps({
+                "url" : url,
+                "service" : "lambda"
+            })
+        )
     
     return {
         'statusCode': 200,
