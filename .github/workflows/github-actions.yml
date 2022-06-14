@@ -23,14 +23,14 @@ jobs:
       uses: montudor/action-zip@v1
 
     - name: Zip layer files
-      run: zip -r ../../artifacts/boto3-layer.zip .
+      run: zip -r ../../boto3-layer.zip .
       working-directory: ./tmp/boto3-layer
 
     - name: Upload zip of layer
       uses: actions/upload-artifact@v2
       with:
         name: boto3-layer
-        path: ./artifacts/boto3-layer.zip
+        path: ./boto3-layer.zip
 
   test_crawler:
     runs-on: ubuntu-latest
