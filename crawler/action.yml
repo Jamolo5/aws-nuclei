@@ -1,5 +1,5 @@
-name: "crawler-build"
-description: "Builds the crawler lambda artifact"
+name: "scanner-build"
+description: "Builds the scanner lambda artifact"
 runs:
   using: "docker"
   image: "Dockerfile"
