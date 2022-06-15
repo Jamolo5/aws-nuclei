@@ -233,7 +233,7 @@ resource "aws_lambda_function" "scanner" {
   timeout       = 10
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
   vpc_config {
-    security_group_ids = aws_default_security_group.default.id
+    security_group_ids = [aws_default_security_group.default.id]
     subnet_ids         = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id, aws_default_subnet.default_az3.id]
   }
   file_system_config {
@@ -333,10 +333,22 @@ resource "aws_sqs_queue" "crawled_urls" {
 
 resource "aws_efs_file_system" "nuclei_efs" {}
 
-resource "aws_efs_mount_target" "nuclei_efs_mount_target" {
+resource "aws_efs_mount_target" "nuclei_efs_mount_target1" {
   file_system_id  = aws_efs_file_system.nuclei_efs.id
   subnet_id       = aws_default_subnet.default_az1.id
-  security_groups = aws_default_vpc.default.id
+  security_groups = [aws_default_security_group.default.id]
+}
+
+resource "aws_efs_mount_target" "nuclei_efs_mount_target2" {
+  file_system_id  = aws_efs_file_system.nuclei_efs.id
+  subnet_id       = aws_default_subnet.default_az2.id
+  security_groups = [aws_default_security_group.default.id]
+}
+
+resource "aws_efs_mount_target" "nuclei_efs_mount_target3" {
+  file_system_id  = aws_efs_file_system.nuclei_efs.id
+  subnet_id       = aws_default_subnet.default_az3.id
+  security_groups = [aws_default_security_group.default.id]
 }
 
 resource "aws_efs_access_point" "nuclei_efs_access_point" {
