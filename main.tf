@@ -176,6 +176,12 @@ resource "aws_cloudwatch_log_group" "crawler" {
   retention_in_days = 3
 }
 
+resource "aws_cloudwatch_log_group" "scanner" {
+  name = "/aws/lambda/${aws_lambda_function.scanner.function_name}"
+
+  retention_in_days = 3
+}
+
 resource "aws_lambda_function" "test_lambda" {
   filename      = "artifacts/hello_world_lambda.zip"
   function_name = "hello_world"

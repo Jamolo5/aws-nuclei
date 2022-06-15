@@ -11,6 +11,7 @@ mountPath = os.environ.get('mountPath')
 
 # Get the nuclei binary if it doesn't already exist
 if not exists(mountPath+"/nuclei"):
+    print("Downloading nuclei to EFS as it is not already present")
     nucleiUrl = os.environ.get('nucleiUrl')
     zipPath = nucleiUrl + "/nuclei.zip"
     urllib.request.urlretrieve(nucleiUrl, zipPath)

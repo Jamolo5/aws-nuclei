@@ -135,6 +135,12 @@ jobs:
         name: crawler_lambda
         path: artifacts
 
+    - name: Download scanner lambda to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: scanner_lambda
+        path: artifacts
+
     - name: Download boto3 layer to the artifacts folder
       uses: actions/download-artifact@v3
       with:
