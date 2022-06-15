@@ -252,6 +252,12 @@ resource "aws_lambda_function" "scanner" {
       nucleiUrl = "https://github.com/projectdiscovery/nuclei/releases/download/v2.7.2/nuclei_2.7.2_linux_amd64.zip"
     }
   }
+
+  depends_on = [
+    aws_efs_mount_target.nuclei_efs_mount_target1,
+    aws_efs_mount_target.nuclei_efs_mount_target2,
+    aws_efs_mount_target.nuclei_efs_mount_target3
+  ]
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
