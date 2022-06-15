@@ -17,20 +17,20 @@ jobs:
       with:
         python-version: 3.9
 
-    - run: mkdir -p ./tmp/boto3-layer/python
-    - run: pip3 install boto3 -t ./tmp/boto3-layer/python
+    - run: mkdir -p ./tmp/boto3_layer/python
+    - run: pip3 install boto3 -t ./tmp/boto3_layer/python
     - name: Install zip
       uses: montudor/action-zip@v1
 
     - name: Zip layer files
-      run: zip -r ../../boto3-layer.zip .
-      working-directory: ./tmp/boto3-layer
+      run: zip -r ../../boto3_layer.zip .
+      working-directory: ./tmp/boto3_layer
 
     - name: Upload zip of layer
       uses: actions/upload-artifact@v2
       with:
-        name: boto3-layer
-        path: ./boto3-layer.zip
+        name: boto3_layer
+        path: ./boto3_layer.zip
 
   test_crawler:
     runs-on: ubuntu-latest
@@ -62,6 +62,36 @@ jobs:
         name: crawler_lambda
         path: crawler_lambda.zip
 
+  test_scanner:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - run: pip install poetry
+    - run: poetry install
+      working-directory: ./scanner/
+
+  build_scanner:
+    needs: test_scanner
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: ./scanner/
+      name: build the scanner lambda artifact
+
+    - uses: actions/upload-artifact@v2
+      name: Upload zip of scanner lambda
+      with:
+        name: scanner_lambda
+        path: scanner_lambda.zip
+
   zip_and_upload_test_lambda:
     runs-on: ubuntu-latest
     environment: dev
@@ -86,7 +116,7 @@ jobs:
         path: ./artifacts/hello_world_lambda.zip
 
   terraform_plan_or_apply:
-    needs: [zip_and_upload_test_lambda, build_crawler, build_boto3_layer]
+    needs: [zip_and_upload_test_lambda, build_crawler, build_scanner, build_boto3_layer]
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -105,10 +135,16 @@ jobs:
         name: crawler_lambda
         path: artifacts
 
+    - name: Download scanner lambda to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: scanner_lambda
+        path: artifacts
+
     - name: Download boto3 layer to the artifacts folder
       uses: actions/download-artifact@v3
       with:
-        name: boto3-layer
+        name: boto3_layer
         path: artifacts
     
     # Terraform commands mostly taken from https://learn.hashicorp.com/tutorials/terraform/github-actions

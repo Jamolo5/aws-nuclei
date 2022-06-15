@@ -3,6 +3,7 @@ crawler/dist/*
 crawler/package/*
 scanner/dist/*
 scanner/package/*
+artifacts/*
 *__pycache__*
 *.DS_Store
 .terraform*

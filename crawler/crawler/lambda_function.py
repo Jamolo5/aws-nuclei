@@ -1,7 +1,6 @@
 import json
 import boto3
 import os
-import json
 
 sqsUrl = os.environ.get('sqsUrl')
 sqsClient = boto3.client('sqs')

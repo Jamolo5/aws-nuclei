@@ -22,20 +22,52 @@ provider "aws" {
   region = "us-west-2"
 }
 
+resource "aws_default_vpc" "default" {}
+
+resource "aws_default_subnet" "default_az1" {
+  availability_zone = "us-west-2a"
+}
+
+resource "aws_default_subnet" "default_az2" {
+  availability_zone = "us-west-2b"
+}
+
+resource "aws_default_subnet" "default_az3" {
+  availability_zone = "us-west-2c"
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_default_vpc.default.id
+
+  ingress {
+    protocol  = -1
+    self      = true
+    from_port = 0
+    to_port   = 0
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_iam_policy" "sqs_publish_policy" {
   name        = "sqs_publish_policy"
   path        = "/"
-  description = "Grants permission to publish to the crawled-urls SQS queue"
+  description = "Grants permission to publish to the crawled_urls SQS queue"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Action = [
-          "ec2:Describe*",
+          "sqs:SendMessage",
         ]
         Effect   = "Allow"
-        Resource = "${aws_sqs_queue.crawled-urls.arn}"
+        Resource = "${aws_sqs_queue.crawled_urls.arn}"
       },
     ]
   })
@@ -122,6 +154,16 @@ resource "aws_iam_role_policy_attachment" "scanner_policy_attach_sqs_execution" 
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "scanner_policy_attach_vpc_access" {
+  role       = aws_iam_role.scanner_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "scanner_policy_attach_efs_access" {
+  role       = aws_iam_role.scanner_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticFileSystemClientReadWriteAccess"
+}
+
 resource "aws_cloudwatch_log_group" "test_lambda" {
   name = "/aws/lambda/${aws_lambda_function.test_lambda.function_name}"
 
@@ -130,6 +172,12 @@ resource "aws_cloudwatch_log_group" "test_lambda" {
 
 resource "aws_cloudwatch_log_group" "crawler" {
   name = "/aws/lambda/${aws_lambda_function.crawler.function_name}"
+
+  retention_in_days = 3
+}
+
+resource "aws_cloudwatch_log_group" "scanner" {
+  name = "/aws/lambda/${aws_lambda_function.scanner.function_name}"
 
   retention_in_days = 3
 }
@@ -157,7 +205,7 @@ resource "aws_lambda_function" "crawler" {
   role          = aws_iam_role.crawler_role.arn
   handler       = "package.crawler.lambda_function.lambda_handler"
   timeout       = 10
-  layers        = [aws_lambda_layer_version.boto3-layer.arn]
+  layers        = [aws_lambda_layer_version.boto3_layer.arn]
 
   source_code_hash = filebase64sha256("artifacts/crawler_lambda.zip")
 
@@ -165,16 +213,45 @@ resource "aws_lambda_function" "crawler" {
 
   environment {
     variables = {
-      sqsUrl = aws_sqs_queue.crawled-urls.url
+      sqsUrl = aws_sqs_queue.crawled_urls.url
     }
   }
 }
 
-resource "aws_lambda_layer_version" "boto3-layer" {
-  filename   = "artifacts/boto3-layer.zip"
-  layer_name = "boto3-layer"
+resource "aws_lambda_layer_version" "boto3_layer" {
+  filename   = "artifacts/boto3_layer.zip"
+  layer_name = "boto3_layer"
 
   compatible_runtimes = ["python3.9"]
+}
+
+resource "aws_lambda_function" "scanner" {
+  filename      = "artifacts/scanner_lambda.zip"
+  function_name = "scanner"
+  role          = aws_iam_role.scanner_role.arn
+  handler       = "package.scanner.lambda_function.lambda_handler"
+  timeout       = 10
+  layers        = [aws_lambda_layer_version.boto3_layer.arn]
+  vpc_config {
+    security_group_ids = [aws_default_security_group.default.id]
+    subnet_ids         = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id, aws_default_subnet.default_az3.id]
+  }
+  file_system_config {
+    arn              = aws_efs_access_point.nuclei_efs_access_point.arn
+    local_mount_path = "/mnt/nuclei"
+  }
+
+  source_code_hash = filebase64sha256("artifacts/scanner_lambda.zip")
+
+  runtime = "python3.9"
+
+  environment {
+    variables = {
+      sqsUrl    = aws_sqs_queue.crawled_urls.url
+      mountPath = "/mnt/nuclei"
+      nucleiUrl = "https://github.com/projectdiscovery/nuclei/releases/download/v2.7.2/nuclei_2.7.2_linux_amd64.zip"
+    }
+  }
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
@@ -237,8 +314,8 @@ resource "aws_lambda_permission" "api_gw" {
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
 }
 
-resource "aws_sqs_queue" "crawled-urls" {
-  name = "crawled-urls"
+resource "aws_sqs_queue" "crawled_urls" {
+  name = "crawled_urls"
   # delay_seconds             = 90
   max_message_size           = 2048
   message_retention_seconds  = 7200
@@ -252,4 +329,42 @@ resource "aws_sqs_queue" "crawled-urls" {
   #   redrivePermission = "byQueue",
   #   sourceQueueArns   = [aws_sqs_queue.terraform_queue_deadletter.arn]
   # })
+}
+
+resource "aws_efs_file_system" "nuclei_efs" {}
+
+resource "aws_efs_mount_target" "nuclei_efs_mount_target1" {
+  file_system_id  = aws_efs_file_system.nuclei_efs.id
+  subnet_id       = aws_default_subnet.default_az1.id
+  security_groups = [aws_default_security_group.default.id]
+}
+
+resource "aws_efs_mount_target" "nuclei_efs_mount_target2" {
+  file_system_id  = aws_efs_file_system.nuclei_efs.id
+  subnet_id       = aws_default_subnet.default_az2.id
+  security_groups = [aws_default_security_group.default.id]
+}
+
+resource "aws_efs_mount_target" "nuclei_efs_mount_target3" {
+  file_system_id  = aws_efs_file_system.nuclei_efs.id
+  subnet_id       = aws_default_subnet.default_az3.id
+  security_groups = [aws_default_security_group.default.id]
+}
+
+resource "aws_efs_access_point" "nuclei_efs_access_point" {
+  file_system_id = aws_efs_file_system.nuclei_efs.id
+
+  posix_user {
+    gid = 1000
+    uid = 1000
+  }
+
+  root_directory {
+    path = "/lambda"
+    creation_info {
+      owner_gid   = 1000
+      owner_uid   = 1000
+      permissions = "0777"
+    }
+  }
 }
