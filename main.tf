@@ -28,12 +28,46 @@ resource "aws_default_subnet" "default_az1" {
   availability_zone = "us-west-2a"
 }
 
-resource "aws_default_subnet" "default_az2" {
-  availability_zone = "us-west-2b"
+resource "aws_subnet" "private_az1" {
+  availability_zone = "us-west-2a"
+  vpc_id            = aws_default_vpc.default.id
+  cidr_block        = "172.31.64.0/27"
 }
 
-resource "aws_default_subnet" "default_az3" {
-  availability_zone = "us-west-2c"
+resource "aws_subnet" "private_az2" {
+  availability_zone = "us-west-2b"
+  vpc_id            = aws_default_vpc.default.id
+  cidr_block        = "172.31.64.32/27"
+}
+
+resource "aws_eip" "natgw_eip" {
+  vpc = true
+}
+
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.natgw_eip.id
+  subnet_id     = aws_default_subnet.default_az1.id
+  tags = {
+    "Name" = "nat_gateway"
+  }
+}
+
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_default_vpc.default.id
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gateway.id
+  }
+}
+
+resource "aws_route_table_association" "subnet1_rt" {
+  subnet_id      = aws_subnet.private_az1.id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+resource "aws_route_table_association" "subnet2_rt" {
+  subnet_id      = aws_subnet.private_az2.id
+  route_table_id = aws_route_table.private_rt.id
 }
 
 resource "aws_default_security_group" "default" {
@@ -234,7 +268,7 @@ resource "aws_lambda_function" "scanner" {
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
   vpc_config {
     security_group_ids = [aws_default_security_group.default.id]
-    subnet_ids         = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id, aws_default_subnet.default_az3.id]
+    subnet_ids         = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
   }
   file_system_config {
     arn              = aws_efs_access_point.nuclei_efs_access_point.arn
@@ -255,8 +289,7 @@ resource "aws_lambda_function" "scanner" {
 
   depends_on = [
     aws_efs_mount_target.nuclei_efs_mount_target1,
-    aws_efs_mount_target.nuclei_efs_mount_target2,
-    aws_efs_mount_target.nuclei_efs_mount_target3
+    aws_efs_mount_target.nuclei_efs_mount_target2
   ]
 }
 
@@ -341,19 +374,13 @@ resource "aws_efs_file_system" "nuclei_efs" {}
 
 resource "aws_efs_mount_target" "nuclei_efs_mount_target1" {
   file_system_id  = aws_efs_file_system.nuclei_efs.id
-  subnet_id       = aws_default_subnet.default_az1.id
+  subnet_id       = aws_subnet.private_az1.id
   security_groups = [aws_default_security_group.default.id]
 }
 
 resource "aws_efs_mount_target" "nuclei_efs_mount_target2" {
   file_system_id  = aws_efs_file_system.nuclei_efs.id
-  subnet_id       = aws_default_subnet.default_az2.id
-  security_groups = [aws_default_security_group.default.id]
-}
-
-resource "aws_efs_mount_target" "nuclei_efs_mount_target3" {
-  file_system_id  = aws_efs_file_system.nuclei_efs.id
-  subnet_id       = aws_default_subnet.default_az3.id
+  subnet_id       = aws_subnet.private_az2.id
   security_groups = [aws_default_security_group.default.id]
 }
 
