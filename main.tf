@@ -161,7 +161,7 @@ resource "aws_iam_role_policy_attachment" "scanner_policy_attach_vpc_access" {
 
 resource "aws_iam_role_policy_attachment" "scanner_policy_attach_efs_access" {
   role       = aws_iam_role.scanner_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonElasticFileSystemClientReadWriteAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientReadWriteAccess"
 }
 
 resource "aws_cloudwatch_log_group" "test_lambda" {
