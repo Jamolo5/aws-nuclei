@@ -231,6 +231,33 @@ resource "aws_iam_role_policy_attachment" "scanner_policy_attach_rds_access" {
   policy_arn = aws_iam_policy.rds_connect_policy.arn
 }
 
+resource "aws_iam_role" "db_init_role" {
+  name = "db_init_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Sid    = ""
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "db_init_policy_attach_rds_access" {
+  role       = aws_iam_role.db_init_role.name
+  policy_arn = aws_iam_policy.rds_connect_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "db_init_policy_attach_lambda_basic" {
+  role       = aws_iam_role.db_init_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 resource "aws_cloudwatch_log_group" "test_lambda" {
   name = "/aws/lambda/${aws_lambda_function.test_lambda.function_name}"
 
@@ -245,6 +272,12 @@ resource "aws_cloudwatch_log_group" "crawler" {
 
 resource "aws_cloudwatch_log_group" "scanner" {
   name = "/aws/lambda/${aws_lambda_function.scanner.function_name}"
+
+  retention_in_days = 3
+}
+
+resource "aws_cloudwatch_log_group" "db_init" {
+  name = "/aws/lambda/${aws_lambda_function.db_init.function_name}"
 
   retention_in_days = 3
 }
@@ -315,6 +348,8 @@ resource "aws_lambda_function" "scanner" {
 
   environment {
     variables = {
+      APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
+      DB_HOST = aws_rds_cluster.vuln_db_cluster.endpoint
       HOME      = "/tmp/"
       sqsUrl    = aws_sqs_queue.crawled_urls.url
       mountPath = "/mnt/nuclei"
@@ -326,6 +361,30 @@ resource "aws_lambda_function" "scanner" {
     aws_efs_mount_target.nuclei_efs_mount_target1,
     aws_efs_mount_target.nuclei_efs_mount_target2
   ]
+}
+
+resource "aws_lambda_function" "db_init" {
+  filename      = "artifacts/db_init.zip"
+  function_name = "db_init"
+  role          = aws_iam_role.db_init_role.arn
+  handler       = "package.db_init.lambda_function.lambda_handler"
+  timeout       = 300
+  layers        = [aws_lambda_layer_version.boto3_layer.arn]
+  vpc_config {
+    security_group_ids = [aws_default_security_group.default.id]
+    subnet_ids         = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
+  }
+
+  source_code_hash = filebase64sha256("artifacts/db_init.zip")
+
+  runtime = "python3.9"
+
+  environment {
+    variables = {
+      APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
+      DB_HOST = aws_rds_cluster.vuln_db_cluster.endpoint
+      }
+  }
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
