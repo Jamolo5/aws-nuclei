@@ -443,15 +443,15 @@ resource "aws_efs_access_point" "nuclei_efs_access_point" {
 }
 
 resource "aws_rds_cluster" "vuln_db_cluster" {
-  cluster_identifier = "vuln_db_cluster"
-  engine             = "aurora-postgresql"
-  engine_mode        = "provisioned"
-  engine_version     = "13.6"
-  database_name      = "vuln_db"
-  master_username    = "test"
-  master_password    = "must_be_eight_characters"
+  cluster_identifier                  = "vuln-db-cluster"
+  engine                              = "aurora-postgresql"
+  engine_mode                         = "provisioned"
+  engine_version                      = "13.6"
+  database_name                       = "vuln_db"
+  master_username                     = "test"
+  master_password                     = "must_be_eight_characters"
   iam_database_authentication_enabled = true
-  db_subnet_group_name = aws_db_subnet_group.private.id
+  db_subnet_group_name                = aws_db_subnet_group.private.id
 
   serverlessv2_scaling_configuration {
     max_capacity = 1.0
@@ -460,9 +460,9 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "vuln_db_instance" {
-  cluster_identifier = aws_rds_cluster.vuln_db_cluster.id
-  instance_class     = "db.serverless"
-  engine             = aws_rds_cluster.vuln_db_cluster.engine
-  engine_version     = aws_rds_cluster.vuln_db_cluster.engine_version
+  cluster_identifier   = aws_rds_cluster.vuln_db_cluster.id
+  instance_class       = "db.serverless"
+  engine               = aws_rds_cluster.vuln_db_cluster.engine
+  engine_version       = aws_rds_cluster.vuln_db_cluster.engine_version
   db_subnet_group_name = aws_db_subnet_group.private.id
 }
