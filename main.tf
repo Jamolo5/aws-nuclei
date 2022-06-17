@@ -525,3 +525,15 @@ resource "aws_rds_cluster_instance" "vuln_db_instance" {
   engine_version       = aws_rds_cluster.vuln_db_cluster.engine_version
   db_subnet_group_name = aws_db_subnet_group.private.id
 }
+
+resource "aws_lambda_invocation" "db_init" {
+  function_name = aws_lambda_function.db_init.function_name
+  depends_on = [
+    aws_rds_cluster.vuln_db_cluster,
+    aws_rds_cluster_instance.vuln_db_instance,
+    aws_lambda_function.db_init
+  ]
+  input = jsonencode({
+    key1 = "value1"
+  })
+}
