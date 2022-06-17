@@ -264,7 +264,8 @@ resource "aws_lambda_function" "scanner" {
   function_name = "scanner"
   role          = aws_iam_role.scanner_role.arn
   handler       = "package.scanner.lambda_function.lambda_handler"
-  timeout       = 10
+  timeout       = 300
+  memory_size   = 1028
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
   vpc_config {
     security_group_ids = [aws_default_security_group.default.id]
@@ -281,6 +282,7 @@ resource "aws_lambda_function" "scanner" {
 
   environment {
     variables = {
+      HOME      = "/tmp/"
       sqsUrl    = aws_sqs_queue.crawled_urls.url
       mountPath = "/mnt/nuclei"
       nucleiUrl = "https://github.com/projectdiscovery/nuclei/releases/download/v2.7.2/nuclei_2.7.2_linux_amd64.zip"
@@ -368,6 +370,11 @@ resource "aws_sqs_queue" "crawled_urls" {
   #   redrivePermission = "byQueue",
   #   sourceQueueArns   = [aws_sqs_queue.terraform_queue_deadletter.arn]
   # })
+}
+
+resource "aws_lambda_event_source_mapping" "example" {
+  event_source_arn = aws_sqs_queue.crawled_urls.arn
+  function_name    = aws_lambda_function.scanner.arn
 }
 
 resource "aws_efs_file_system" "nuclei_efs" {}
