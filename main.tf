@@ -349,11 +349,11 @@ resource "aws_lambda_function" "scanner" {
   environment {
     variables = {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
-      DB_HOST = aws_rds_cluster.vuln_db_cluster.endpoint
-      HOME      = "/tmp/"
-      sqsUrl    = aws_sqs_queue.crawled_urls.url
-      mountPath = "/mnt/nuclei"
-      nucleiUrl = "https://github.com/projectdiscovery/nuclei/releases/download/v2.7.2/nuclei_2.7.2_linux_amd64.zip"
+      DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
+      HOME        = "/tmp/"
+      sqsUrl      = aws_sqs_queue.crawled_urls.url
+      mountPath   = "/mnt/nuclei"
+      nucleiUrl   = "https://github.com/projectdiscovery/nuclei/releases/download/v2.7.2/nuclei_2.7.2_linux_amd64.zip"
     }
   }
 
@@ -382,8 +382,8 @@ resource "aws_lambda_function" "db_init" {
   environment {
     variables = {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
-      DB_HOST = aws_rds_cluster.vuln_db_cluster.endpoint
-      }
+      DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
+    }
   }
 }
 
