@@ -253,6 +253,11 @@ resource "aws_iam_role_policy_attachment" "db_init_policy_attach_rds_access" {
   policy_arn = aws_iam_policy.rds_connect_policy.arn
 }
 
+resource "aws_iam_role_policy_attachment" "db_init_policy_attach_vpc_access" {
+  role       = aws_iam_role.db_init_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 resource "aws_iam_role_policy_attachment" "db_init_policy_attach_lambda_basic" {
   role       = aws_iam_role.db_init_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
