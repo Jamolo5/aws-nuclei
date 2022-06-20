@@ -9,3 +9,9 @@ output "base_url" {
 
   value = aws_apigatewayv2_stage.lambda.invoke_url
 }
+
+output "rds_arn" {
+  description = "full ARN/username for rds cluster"
+
+  value = "${aws_rds_cluster.vuln_db_cluster.arn}/${aws_rds_cluster.vuln_db_cluster.master_username}"
+}

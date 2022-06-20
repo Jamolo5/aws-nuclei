@@ -31,6 +31,36 @@ jobs:
       with:
         name: boto3_layer
         path: ./boto3_layer.zip
+  
+  test_db_init:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - run: pip install poetry
+    - run: poetry install
+      working-directory: ./db_init/
+
+  build_db_init:
+    needs: test_db_init
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: ./db_init/
+      name: build the db_init lambda artifact
+
+    - uses: actions/upload-artifact@v2
+      name: Upload zip of db_init lambda
+      with:
+        name: db_init
+        path: db_init.zip
 
   test_crawler:
     runs-on: ubuntu-latest
@@ -116,7 +146,7 @@ jobs:
         path: ./artifacts/hello_world_lambda.zip
 
   terraform_plan_or_apply:
-    needs: [zip_and_upload_test_lambda, build_crawler, build_scanner, build_boto3_layer]
+    needs: [zip_and_upload_test_lambda, build_crawler, build_scanner, build_boto3_layer, build_db_init]
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -139,6 +169,12 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: scanner_lambda
+        path: artifacts
+
+    - name: Download db_init lambda to the artifacts folder
+      uses: actions/download-artifact@v3
+      with:
+        name: db_init
         path: artifacts
 
     - name: Download boto3 layer to the artifacts folder

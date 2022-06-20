@@ -32,13 +32,14 @@ def crawl_lambda():
     # Get list of functions
     # TODO: Deal with results pagination
     functionArnList = [function['FunctionArn'] for function in client.list_functions()['Functions']]
-
+    
     # Get URLs from each function
     # TODO: Deal with results pagination
     urls = []
     for functionArn in functionArnList:
+        print("Finding URLs for function: "+functionArn)
         try:
-            urls = [function['FunctionUrl'] for function in client.list_function_url_configs(FunctionName=functionArn)['FunctionUrlConfigs']]
+            urls.extend([function['FunctionUrl'] for function in client.list_function_url_configs(FunctionName=functionArn)['FunctionUrlConfigs']])
         except client.exceptions.ResourceNotFoundException:
             print('No URL configs found for lambda: ',functionArn)
     

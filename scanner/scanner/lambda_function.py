@@ -5,6 +5,7 @@ import io
 import urllib.request
 import zipfile
 import subprocess
+import re
 from os.path import exists
 
 sqsUrl = os.environ.get('sqsUrl')
@@ -24,22 +25,28 @@ if not exists(nucleiBinaryPath):
     print("Nuclei installed")
 
 def lambda_handler(event, context):
+    print("Received event: "+json.dumps(event))
     targets = []
     if "Records" in event:
-        targets.extend([record["body"] for record in event["Records"]])
+        targets.extend([json.loads(record["body"]) for record in event["Records"]])
     else:
         print("No records found in event:"+json.dumps(event))
-    # results = []
+    print("Targets to scan:")
+    print(targets)
+    results = []
     for target in targets:
-        print("Scanning URL:\n"+target["url"])
+        print("Scanning beginning for URL:\n"+target["url"])
         args = (nucleiBinaryPath, "-u", target["url"], "-silent", "-nc")
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
-        print("Scanned URL:\n"+target["url"])
-        print("Scan result:")
+        print("Scanned completed for URL:\n"+target["url"])
+        print("Scan results:")
         popen.wait()
         for line in io.TextIOWrapper(popen.stdout, encoding="utf-8"):
             print(line)
+            results.append(re.findall('\[(.*?)\]', line))
+    print(results)
+    print("Done!")
     return {
         'statusCode': 200
     }
