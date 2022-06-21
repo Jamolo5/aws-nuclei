@@ -308,7 +308,7 @@ resource "aws_lambda_function" "crawler" {
   filename      = "artifacts/crawler_lambda.zip"
   function_name = "crawler"
   role          = aws_iam_role.crawler_role.arn
-  handler       = "package.crawler.lambda_function.lambda_handler"
+  handler       = "crawler.lambda_function.lambda_handler"
   timeout       = 10
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
 
@@ -334,7 +334,7 @@ resource "aws_lambda_function" "scanner" {
   filename      = "artifacts/scanner_lambda.zip"
   function_name = "scanner"
   role          = aws_iam_role.scanner_role.arn
-  handler       = "package.scanner.lambda_function.lambda_handler"
+  handler       = "scanner.lambda_function.lambda_handler"
   timeout       = 300
   memory_size   = 1028
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
@@ -373,7 +373,7 @@ resource "aws_lambda_function" "db_init" {
   filename      = "artifacts/db_init.zip"
   function_name = "db_init"
   role          = aws_iam_role.db_init_role.arn
-  handler       = "package.db_init.lambda_function.lambda_handler"
+  handler       = "db_init.lambda_function.lambda_handler"
   timeout       = 300
   layers        = [aws_lambda_layer_version.boto3_layer.arn]
   vpc_config {
