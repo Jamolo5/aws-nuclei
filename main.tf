@@ -355,6 +355,7 @@ resource "aws_lambda_function" "scanner" {
     variables = {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
       DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
+      DB_USER     = aws_rds_cluster.vuln_db_cluster.master_username
       HOME        = "/tmp/"
       sqsUrl      = aws_sqs_queue.crawled_urls.url
       mountPath   = "/mnt/nuclei"
@@ -388,6 +389,7 @@ resource "aws_lambda_function" "db_init" {
     variables = {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
       DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
+      DB_USER     = aws_rds_cluster.vuln_db_cluster.master_username
     }
   }
 }
