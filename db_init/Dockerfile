@@ -53,6 +53,8 @@ RUN poetry run pip install --upgrade -t /package dist/*.whl
 
 WORKDIR /package
 
+RUN wget https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
+
 RUN zip -r -D /dist/db_init.zip * -x '*.pyc'
 
 ENTRYPOINT ["cp", "/dist/db_init.zip", "/github/workspace/db_init.zip"]
