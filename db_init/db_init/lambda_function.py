@@ -10,6 +10,7 @@ def get_connection():
         client = boto3.client("rds")
         DBEndPoint = os.environ.get("DB_HOST")
         DBUserName = os.environ.get("DB_USER", "test")
+        DBName = os.environ.get("APP_DB_NAME")
         password = client.generate_db_auth_token(
             DBHostname=DBEndPoint, Port=5432, DBUsername = DBUserName
         )
@@ -20,6 +21,7 @@ def get_connection():
             host=DBEndPoint,
             user=DBUserName,
             password=password,
+            database=DBName,
             ssl_context=ssl_context,
         )
         return conn
@@ -30,7 +32,7 @@ def get_connection():
 def lambda_handler(event, context):
     print("Initialising Database")
     global connection
-    DBName = os.environ.get("APP_DB_NAME")
+    TableName = os.environ.get("APP_DB_NAME")
     try:
         if connection is None:
             print("No existing connection, connecting..")
@@ -41,7 +43,7 @@ def lambda_handler(event, context):
         print("instantiating the cursor from connection")
         cursor = connection.cursor()
         cursor.execute("CREATE TYPE severity AS ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown')")
-        query = "CREATE TABLE {0} (id SERIAL, timestamp_of_discovery timestamptz, severity severity, cve_or_name text, url text".format(DBName)
+        query = "CREATE TABLE {0} (id SERIAL, timestamp_of_discovery timestamptz, severity severity, cve_or_name text, url text, additional_info text)".format(TableName)
         print("Query:\n"+query)
         cursor.execute(query)
         results = cursor.fetchall()
