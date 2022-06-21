@@ -40,6 +40,15 @@ resource "aws_subnet" "private_az2" {
   cidr_block        = "172.31.64.32/27"
 }
 
+resource "aws_db_subnet_group" "public" {
+  name       = "public"
+  subnet_ids = [aws_default_subnet.default_az1.id]
+
+  tags = {
+    Name = "My public DB subnet group"
+  }
+}
+
 resource "aws_db_subnet_group" "private" {
   name       = "private"
   subnet_ids = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
@@ -183,7 +192,7 @@ resource "aws_iam_policy" "rds_connect_policy" {
           "rds-db:connect",
         ]
         Effect   = "Allow"
-        Resource = "${aws_rds_cluster.vuln_db_cluster.arn}/${aws_rds_cluster.vuln_db_cluster.master_username}"
+        Resource = "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:*/${aws_rds_cluster.vuln_db_cluster.master_username}"
       },
     ]
   })
@@ -517,7 +526,7 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   master_username                     = "test"
   master_password                     = "must_be_eight_characters"
   iam_database_authentication_enabled = true
-  db_subnet_group_name                = aws_db_subnet_group.private.id
+  db_subnet_group_name                = aws_db_subnet_group.public.id
 
   serverlessv2_scaling_configuration {
     max_capacity = 1.0
@@ -530,7 +539,7 @@ resource "aws_rds_cluster_instance" "vuln_db_instance" {
   instance_class       = "db.serverless"
   engine               = aws_rds_cluster.vuln_db_cluster.engine
   engine_version       = aws_rds_cluster.vuln_db_cluster.engine_version
-  db_subnet_group_name = aws_db_subnet_group.private.id
+  db_subnet_group_name = aws_db_subnet_group.public.id
 }
 
 resource "aws_lambda_invocation" "db_init" {
