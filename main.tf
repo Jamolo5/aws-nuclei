@@ -525,6 +525,9 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   database_name                       = "vuln_db"
   master_username                     = "test"
   master_password                     = "must_be_eight_characters"
+  skip_final_snapshot                 = true
+  backup_retention_period             = 0
+  apply_immediately                   = true
   iam_database_authentication_enabled = true
   db_subnet_group_name                = aws_db_subnet_group.public.id
 
