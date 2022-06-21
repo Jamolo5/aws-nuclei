@@ -49,8 +49,10 @@ RUN chmod 754 scanner/lambda_function.py
 
 RUN poetry build
 
-RUN poetry run pip install --upgrade -t package dist/*.whl
+RUN poetry run pip install --upgrade -t /package dist/*.whl
 
-RUN zip -r -D /dist/scanner_lambda.zip package/* -x '*.pyc'
+WORKDIR /package
+
+RUN zip -r -D /dist/scanner_lambda.zip * -x '*.pyc'
 
 ENTRYPOINT ["cp", "/dist/scanner_lambda.zip", "/github/workspace/scanner_lambda.zip"]

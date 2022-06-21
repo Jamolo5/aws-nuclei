@@ -29,8 +29,10 @@ def lambda_handler(event, context):
     DBName = os.environ.get("APP_DB_NAME")
     try:
         if connection is None:
+            print("No existing connection, connecting..")
             connection = get_connection()
         if connection is None:
+            print("Connection could not be established, aborting")
             return {"status": "Error", "message": "Failed"}
         print("instantiating the cursor from connection")
         cursor = connection.cursor()
