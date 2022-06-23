@@ -46,7 +46,7 @@ resource "aws_subnet" "private_az2" {
 
 resource "aws_db_subnet_group" "public" {
   name       = "public"
-  subnet_ids = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az1.id]
+  subnet_ids = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id]
 
   tags = {
     Name = "My public DB subnet group"
@@ -525,7 +525,7 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   cluster_identifier                  = "vuln-db-cluster"
   engine                              = "aurora-mysql"
   engine_mode                         = "provisioned"
-  engine_version                      = "5.7.mysql_aurora.2.10.2"
+  engine_version                      = "8.0.mysql_aurora.3.02.0"
   database_name                       = "vuln_db"
   master_username                     = "test"
   master_password                     = "must_be_eight_characters"
