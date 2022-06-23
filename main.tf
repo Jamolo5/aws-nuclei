@@ -523,9 +523,9 @@ resource "aws_efs_access_point" "nuclei_efs_access_point" {
 
 resource "aws_rds_cluster" "vuln_db_cluster" {
   cluster_identifier                  = "vuln-db-cluster"
-  engine                              = "aurora-postgresql"
+  engine                              = "aurora-mysql"
   engine_mode                         = "provisioned"
-  engine_version                      = "13.6"
+  engine_version                      = "5.7.mysql_aurora.2.10.2"
   database_name                       = "vuln_db"
   master_username                     = "test"
   master_password                     = "must_be_eight_characters"
@@ -533,7 +533,7 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   backup_retention_period             = 0
   apply_immediately                   = true
   iam_database_authentication_enabled = true
-  db_subnet_group_name                = aws_db_subnet_group.public.id
+  db_subnet_group_name                = aws_db_subnet_group.private.id
 
   serverlessv2_scaling_configuration {
     max_capacity = 1.0
@@ -546,7 +546,7 @@ resource "aws_rds_cluster_instance" "vuln_db_instance" {
   instance_class       = "db.serverless"
   engine               = aws_rds_cluster.vuln_db_cluster.engine
   engine_version       = aws_rds_cluster.vuln_db_cluster.engine_version
-  db_subnet_group_name = aws_db_subnet_group.public.id
+  db_subnet_group_name = aws_db_subnet_group.private.id
 }
 
 resource "aws_lambda_invocation" "db_init" {

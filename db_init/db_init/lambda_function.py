@@ -1,7 +1,6 @@
 import boto3
 import os
-import pg8000
-import ssl
+import pymysql.cursors
 
 connection = None
 def get_connection():
@@ -14,15 +13,14 @@ def get_connection():
         password = client.generate_db_auth_token(
             DBHostname=DBEndPoint, Port=5432, DBUsername = DBUserName
         )
-        ssl_context = ssl.create_default_context()
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.load_verify_locations('rds-ca-2019-root.pem')
-        conn = pg8000.connect(
+        conn = pymysql.connect(
             host=DBEndPoint,
             user=DBUserName,
             password=password,
             database=DBName,
-            ssl_context=ssl_context,
+            charset='utf8mb4',
+            ssl_ca='rds-ca-2019-root.pem',
+            ssl_verify_cert=True
         )
         return conn
     except Exception as e:
@@ -41,21 +39,23 @@ def lambda_handler(event, context):
             print("Connection could not be established, aborting")
             return {"status": "Error", "message": "Failed"}
         print("instantiating the cursor from connection")
-        cursor = connection.cursor()
-        cursor.execute("CREATE TYPE severity AS ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown')")
-        query = "CREATE TABLE {0} (id SERIAL, timestamp_of_discovery timestamptz, severity severity, cve_or_name text, url text, additional_info text)".format(TableName)
-        print("Query:\n"+query)
-        cursor.execute(query)
-        results = cursor.fetchall()
-        print("Results:")
-        results = []
-        for row in results:
-            results.append(row)
-            print(row)
-        cursor.close
-        # retry = False
-        response = {"status": "Success", "results": str(results)}
-        return response
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute("CREATE TYPE severity AS ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown')")
+                query = "CREATE TABLE {0} (id SERIAL, timestamp_of_discovery timestamptz, severity severity, cve_or_name text, url text, additional_info text)".format(TableName)
+                print("Query:\n"+query)
+                cursor.execute(query)
+            connection.commit()
+            with connection.cursor() as cursor:
+                results = cursor.fetchall()
+                print("Results:")
+                results = []
+                for row in results:
+                    results.append(row)
+                    print(row)
+                # retry = False
+                response = {"status": "Success", "results": str(results)}
+                return response
     except Exception as e:
         try:
             connection.close()
