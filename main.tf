@@ -550,7 +550,7 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   master_password                     = random_password.vuln_db_pw.result
   allow_major_version_upgrade         = true
   skip_final_snapshot                 = true
-  backup_retention_period             = 0
+  backup_retention_period             = 1
   apply_immediately                   = true
   iam_database_authentication_enabled = true
   db_subnet_group_name                = aws_db_subnet_group.private.id
