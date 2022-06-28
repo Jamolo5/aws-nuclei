@@ -196,7 +196,26 @@ resource "aws_iam_policy" "rds_connect_policy" {
           "rds-db:connect",
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:*/${aws_rds_cluster.vuln_db_cluster.master_username}"
+        Resource = "${aws_rds_cluster.vuln_db_cluster.arn}"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy" "vuln_db_pw_retrieval" {
+  name        = "vuln_db_pw_retrieval"
+  path        = "/"
+  description = "Grants permission to fetch the password for the RDS database"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "rds-db:connect",
+        ]
+        Effect   = "secretsmanager:GetSecretValue"
+        Resource = "${aws_secretsmanager_secret.vuln_db_pw.arn}"
       },
     ]
   })
@@ -403,6 +422,8 @@ resource "aws_lambda_function" "db_init" {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
       DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
       DB_USER     = aws_rds_cluster.vuln_db_cluster.master_username
+      APP_REGION  = data.aws_region.current.name
+      APP_DB_PW   = aws_secretsmanager_secret.vuln_db_pw.arn
     }
   }
 }
@@ -528,7 +549,7 @@ resource "aws_rds_cluster" "vuln_db_cluster" {
   engine_version                      = "8.0.mysql_aurora.3.02.0"
   database_name                       = "vuln_db"
   master_username                     = "test"
-  master_password                     = "must_be_eight_characters"
+  master_password                     = random_password.vuln_db_pw.result
   allow_major_version_upgrade         = true
   skip_final_snapshot                 = true
   backup_retention_period             = 0
@@ -560,4 +581,19 @@ resource "aws_lambda_invocation" "db_init" {
   input = jsonencode({
     key1 = "value1"
   })
+}
+
+resource "random_password" "vuln_db_pw" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_secretsmanager_secret" "vuln_db_pw" {
+  name = "vuln_db_pw"
+}
+
+resource "aws_secretsmanager_secret_version" "vuln_db_pw_version" {
+  secret_id     = aws_secretsmanager_secret.vuln_db_pw.id
+  secret_string = random_password.vuln_db_pw.result
 }
