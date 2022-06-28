@@ -261,6 +261,11 @@ resource "aws_iam_role_policy_attachment" "scanner_policy_attach_rds_access" {
   policy_arn = aws_iam_policy.rds_connect_policy.arn
 }
 
+resource "aws_iam_role_policy_attachment" "scanner_policy_attach_pr_retrieval" {
+  role       = aws_iam_role.scanner_role.name
+  policy_arn = aws_iam_policy.vuln_db_pw_retrieval.arn
+}
+
 resource "aws_iam_role" "db_init_role" {
   name = "db_init_role"
 
@@ -291,6 +296,11 @@ resource "aws_iam_role_policy_attachment" "db_init_policy_attach_vpc_access" {
 resource "aws_iam_role_policy_attachment" "db_init_policy_attach_lambda_basic" {
   role       = aws_iam_role.db_init_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "db_init_policy_attach_pr_retrieval" {
+  role       = aws_iam_role.db_init_role.name
+  policy_arn = aws_iam_policy.vuln_db_pw_retrieval.arn
 }
 
 resource "aws_cloudwatch_log_group" "test_lambda" {
