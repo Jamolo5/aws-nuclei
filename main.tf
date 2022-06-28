@@ -211,12 +211,10 @@ resource "aws_iam_policy" "vuln_db_pw_retrieval" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action = [
-          "rds-db:connect",
-        ]
-        Effect   = "secretsmanager:GetSecretValue"
+        Action   = "secretsmanager:GetSecretValue"
+        Effect   = "Allow"
         Resource = "${aws_secretsmanager_secret.vuln_db_pw.arn}"
-      },
+      }
     ]
   })
 }
