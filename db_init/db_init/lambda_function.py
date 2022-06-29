@@ -1,6 +1,6 @@
 import boto3
 import os
-import pymysql.cursors
+import pymysql
 import base64
 from botocore.exceptions import ClientError
 
@@ -8,13 +8,10 @@ connection = None
 def get_connection():
     try:
         print("Connecting to database")
-        client = boto3.client("rds")
         DBEndPoint = os.environ.get("DB_HOST")
         DBUserName = os.environ.get("DB_USER", "test")
         DBName = os.environ.get("APP_DB_NAME")
-        password = client.generate_db_auth_token(
-            DBHostname=DBEndPoint, Port=5432, DBUsername = DBUserName
-        )
+        password = get_password()
         conn = pymysql.connect(
             host=DBEndPoint,
             user=DBUserName,
@@ -30,10 +27,10 @@ def get_connection():
         return None
 
 # Sample code straight from AWS
-def get_secret():
-
-    secret_name = "arn:aws:secretsmanager:us-west-2:847035122536:secret:vuln_db_creds-scYaoD"
-    region_name = "us-west-2"
+def get_password():
+    print("Fetching DB password")
+    secret_name = os.environ.get("APP_DB_PW")
+    region_name = os.environ.get("APP_REGION")
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
@@ -41,16 +38,19 @@ def get_secret():
         service_name='secretsmanager',
         region_name=region_name
     )
-
+    print("Secrets manager client created")
     # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
     # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
     # We rethrow the exception by default.
 
     try:
+        print("Attempting to fetch secret from client")
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
         )
     except ClientError as e:
+        print("Error:")
+        print(e)
         if e.response['Error']['Code'] == 'DecryptionFailureException':
             # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
             # Deal with the exception here, and/or rethrow at your discretion.
@@ -74,31 +74,29 @@ def get_secret():
     else:
         # Decrypts secret using the associated KMS key.
         # Depending on whether the secret is a string or binary, one of these fields will be populated.
+        print("Returning Secret")
         if 'SecretString' in get_secret_value_response:
             return get_secret_value_response['SecretString']
         else:
             return base64.b64decode(get_secret_value_response['SecretBinary'])
 
 def lambda_handler(event, context):
-    print("Initialising Database")
     global connection
     TableName = os.environ.get("APP_DB_NAME")
     try:
         if connection is None:
-            print("No existing connection, connecting..")
+            print("No existing DB connection, connecting..")
             connection = get_connection()
         if connection is None:
-            print("Connection could not be established, aborting")
+            print("Connection to DB could not be established, aborting")
             return {"status": "Error", "message": "Failed"}
         print("instantiating the cursor from connection")
+        response = ""
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute("CREATE TYPE severity AS ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown')")
-                query = "CREATE TABLE {0} (id SERIAL, timestamp_of_discovery timestamptz, severity severity, cve_or_name text, url text, additional_info text)".format(TableName)
+                query = "CREATE TABLE {0} (id INT PRIMARY KEY AUTO_INCREMENT, timestamp_of_discovery TIMESTAMP, severity ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown'), cve_or_name varchar(255), category varchar(255), url varchar(255), additional_info varchar(255))".format(TableName)
                 print("Query:\n"+query)
                 cursor.execute(query)
-            connection.commit()
-            with connection.cursor() as cursor:
                 results = cursor.fetchall()
                 print("Results:")
                 results = []
@@ -107,10 +105,11 @@ def lambda_handler(event, context):
                     print(row)
                 # retry = False
                 response = {"status": "Success", "results": str(results)}
-                return response
+            connection.commit()
+        return response
     except Exception as e:
+        print("Failed due to :{0}".format(str(e)))
         try:
             connection.close()
         except Exception as e:
             connection = None
-        print("Failed due to :{0}".format(str(e)))
