@@ -115,13 +115,15 @@ def add_to_db(results):
         with connection:
             with connection.cursor() as cursor:
                 for result in results:
-                    query = "INSERT INTO vuln_db (timestamp_of_discovery, severity, cve_or_name, category, url, additional_info) VALUES ({ts}, {sev}, {name}, {category}, {url}, {info})".format(
+                    print("Creating query for result:")
+                    print(result)
+                    query = "INSERT INTO vuln_db (timestamp_of_discovery, severity, cve_or_name, category, url, additional_info) VALUES ('{ts}', '{sev}', '{name}', '{category}', '{url}', '{info}')".format(
                         ts = result[1],
                         sev = result[4],
                         category = result[3],
                         name = result[2],
                         url = result[0],
-                        info = '' if result.len() == 5 else result[5]
+                        info = '' if len(result) < 6 else result[5]
                     )
                     print("Query:\n"+query)
                     cursor.execute(query)
@@ -136,10 +138,11 @@ def add_to_db(results):
         print("Failed adding to DB due to :{0}".format(str(e)))
         try:
             connection.close()
+            raise e
         except Exception as e:
             connection = None
             print("Failed to close DB connection due to :{0}".format(str(e)))
-        raise e
+            raise e
 
 def lambda_handler(event, context):
     print("Checking if Nuclei is installed")
@@ -165,8 +168,6 @@ def lambda_handler(event, context):
         for line in io.TextIOWrapper(popen.stdout, encoding="utf-8"):
             print(line)
             result = [target["url"]]
-            result.append(re.findall('\[(.*?)\]', line))
+            result.extend(re.findall('\[(.*?)\]', line))
             results.append(result)
-    print("Scan results:")
-    print(results)
     return add_to_db(results)

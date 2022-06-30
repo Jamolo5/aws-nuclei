@@ -396,6 +396,8 @@ resource "aws_lambda_function" "scanner" {
       APP_DB_NAME = aws_rds_cluster.vuln_db_cluster.database_name
       DB_HOST     = aws_rds_cluster.vuln_db_cluster.endpoint
       DB_USER     = aws_rds_cluster.vuln_db_cluster.master_username
+      APP_REGION  = data.aws_region.current.name
+      APP_DB_PW   = aws_secretsmanager_secret.vuln_db_pw.arn
       HOME        = "/tmp/"
       sqsUrl      = aws_sqs_queue.crawled_urls.url
       mountPath   = "/mnt/nuclei"
