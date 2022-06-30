@@ -94,17 +94,19 @@ def lambda_handler(event, context):
         response = ""
         with connection:
             with connection.cursor() as cursor:
+                # query = "SELECT * FROM vuln_db"
+                query = "DROP TABLE IF EXISTS {0}".format(TableName)
+                print("Query:\n"+query)
+                cursor.execute(query)
                 query = "CREATE TABLE {0} (id INT PRIMARY KEY AUTO_INCREMENT, timestamp_of_discovery TIMESTAMP, severity ENUM('info', 'low', 'medium', 'high', 'critical', 'unknown'), cve_or_name varchar(255), category varchar(255), url varchar(255), additional_info varchar(255))".format(TableName)
                 print("Query:\n"+query)
                 cursor.execute(query)
                 results = cursor.fetchall()
                 print("Results:")
-                results = []
                 for row in results:
-                    results.append(row)
                     print(row)
                 # retry = False
-                response = {"status": "Success", "results": str(results)}
+                response = {"status": "Success"}
             connection.commit()
         return response
     except Exception as e:
